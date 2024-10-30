@@ -250,3 +250,4 @@ def hpsi01(grids, meanfield, iq, weight, weightuv, pinn):
     return pout, pout_mf, pout_del
 
 
+hpsi01_jit = jax.jit(hpsi01)

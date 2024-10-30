@@ -9,7 +9,7 @@ from jax.tree_util import register_dataclass
          data_fields=['x', 'y', 'z', 'der1x', 'der2x', 'cdmpx',
                       'der1y', 'der2y', 'cdmpy', 'der1z', 'der2z', 'cdmpz'],
          meta_fields=['nx', 'ny', 'nz', 'dx', 'dy', 'dz', 'periodic', 'bangx',
-                      'bangy', 'bangz', 'tabc_x', 'tabc_y', 'tabc_z', 'wxyz'])
+                      'bangy', 'bangz', 'tbangx', 'tbangy', 'tbangz', 'tabc_x', 'tabc_y', 'tabc_z', 'wxyz'])
 @dataclass
 class Grids:
     nx: int
