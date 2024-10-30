@@ -60,14 +60,14 @@ meanfield.aq = meanfield.aq.at[...].set(load5d_real('aq'))
 meanfield.v_pair = meanfield.v_pair.at[...].set(load4d_real('v_pair'))
 pout = load4d('pout')
 pout_mf = load4d('pout_mf')
-pout_del = load4d('pout_del')
+#pout_del = load4d('pout_del')
 
 #pswk = load4d('pswk')
 #pswk2 = load4d('pswk2')
 
-from meanfield import hpsi01_jit
+from meanfield import hpsi00_jit
 
-res, res1, res2 = hpsi01_jit(grids, meanfield, 0, 1.0, 0.0, pinn)
+res, res1 = hpsi00_jit(grids, meanfield, 0, 1.0, 0.0, pinn)
 
 def relative_norm_error(res, pout):
     norm_diff = jnp.linalg.norm(res - pout)
@@ -83,12 +83,12 @@ print("Relative Norm Error:", error)
 error = relative_norm_error(res1, pout_mf)
 print("Relative Norm Error:", error)
 
-error = relative_norm_error(res2, pout_del)
-print("Relative Norm Error:", error)
+#error = relative_norm_error(res2, pout_del)
+#print("Relative Norm Error:", error)
 
 print(jnp.max(jnp.abs(pout - res)))
 print(jnp.max(jnp.abs(pout_mf - res1)))
-print(jnp.max(jnp.abs(pout_del - res2)))
+#print(jnp.max(jnp.abs(pout_del - res2)))
 
 #print(jnp.max(res1))
 #print(jnp.max(pswk))
