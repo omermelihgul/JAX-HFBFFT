@@ -369,3 +369,9 @@ def hpsi01(grids, meanfield, iq, weight, weightuv, pinn):
 
 
 hpsi01_jit = jax.jit(hpsi01)
+
+
+
+def skyrme():
+    pass
+

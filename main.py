@@ -9,7 +9,7 @@ from levels import init_levels
 from static import init_static, statichf
 
 jax.config.update('jax_enable_x64', True)
-#jax.config.update('jax_platform_name', 'cpu')
+jax.config.update('jax_platform_name', 'cpu')
 
 config = read_yaml('_config.yml')
 
@@ -64,7 +64,36 @@ pout_mf = load4d('pout_mf')
 
 #pswk = load4d('pswk')
 #pswk2 = load4d('pswk2')
+psi = load5d('psi')
+from static import grstep_vmap
 
+size = 132
+nst = jnp.arange(0, 132)
+spe_mf = jnp.arange(0, 132)
+iq = jnp.zeros(size, dtype=int)
+iq = iq.at[size // 2:].set(1)
+
+psin, psi_mf, spe_mf_new, denerg, hmfpsi, delpsi = grstep_vmap(params, forces, grids, meanfield, levels, static, nst, iq, spe_mf, psi, psi)
+
+print(psi_mf.shape)
+
+import time
+start_time = time.time()
+for _ in range(5):
+    psin, psi_mf, spe_mf_new, denerg, hmfpsi, delpsi = grstep_vmap(params, forces, grids, meanfield, levels, static, nst, iq, spe_mf, psi, psi)
+    psin.block_until_ready()
+    psi_mf.block_until_ready()
+    spe_mf_new.block_until_ready()
+    denerg.block_until_ready()
+    hmfpsi.block_until_ready()
+    delpsi.block_until_ready()
+
+end_time = time.time()
+execution_time = (end_time - start_time) / 5
+
+print(f"Execution time: {execution_time} seconds")
+
+'''
 from meanfield import hpsi00_jit
 
 res, res1 = hpsi00_jit(grids, meanfield, 0, 1.0, 0.0, pinn)
@@ -94,7 +123,7 @@ print(jnp.max(jnp.abs(pout_mf - res1)))
 #print(jnp.max(pswk))
 #print(jnp.max(res2))
 #print(jnp.max(pswk2))
-
+'''
 
 
 

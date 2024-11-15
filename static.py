@@ -3,34 +3,38 @@ from jax import numpy as jnp
 from functools import partial
 from dataclasses import dataclass, replace
 from jax.tree_util import register_dataclass
+from meanfield import hpsi00, hpsi01
+from trivial import rpsnorm, overlap
+from levels import laplace
 
 @partial(register_dataclass,
          data_fields=['hmatrix',
                       'gapmatrix',
                       'symcond',
                       'lambda_save'],
-         meta_fields=['tbcs',
-                      'tdiag'])
+         meta_fields=['e0dmp', 'x0dmp', 'tdiag'])
 @dataclass
 class Static:
-    tbcs: bool
     tdiag: bool
     hmatrix: jax.Array
     gapmatrix: jax.Array
     symcond: jax.Array
     lambda_save: jax.Array
+    e0dmp: float
+    x0dmp: float
 
 
 def init_static(levels, **kwargs) -> Static:
     nst = max(levels.nneut, levels.nprot)
 
     kwargs = {
-        'tbcs': False,
         'tdiag': False,
         'hmatrix': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'gapmatrix': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'symcond': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
-        'lambda_save': jnp.zeros((2, nst, nst), dtype=jnp.complex128)
+        'lambda_save': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
+        'e0dmp': 100.0,
+        'x0dmp': 0.2
     }
 
     return Static(**kwargs)
@@ -168,72 +172,85 @@ def harmosc():
 
 def grstep(
     params,
+    forces,
+    grids,
+    meanfield,
     levels,
     static,
     nst,
     iq,
     spe_mf,
-    denerg,
     psin,
     lagrange
 ):
     sp_efluct1, sp_efluct2 = 0.0, 0.0
 
     # Step 1
-    if static.tbcs:
-        ps1, psi_mf = hpsi()
+    if forces.tbcs:
+        ps1, psi_mf = hpsi00(grids, meanfield, iq, 1.0, 0.0, psin)
     else:
-        weightuv = wguv[nst] * pairwg[nst]
-        ps1, psi_mf = hpsi()
+        weightuv = levels.wguv[nst] * levels.pairwg[nst]
+        ps1, psi_mf = hpsi00(
+            grids,
+            meanfield,
+            iq,
+            levels.wstates[nst] * levels.wocc[nst],
+            levels.wstates[nst] * weightuv,
+            psin
+        )
 
     # Step 2
-    spe_mf_new = jnp.real(overlap(psin, psi_mf))
+    spe_mf_new = jnp.real(overlap(psin, psi_mf, grids.wxyz))
 
     # Step 3
     if static.e0dmp > 0.0:
-        if params.iteration > 1 and not static.tbcs:
+        if params.iteration > 1 and not forces.tbcs:
             if params.mprint > 0:
                 if params.iteration % params.mprint == 0:
-                    h_exp = jnp.real(overlap(psin, ps1))
+                    h_exp = jnp.real(overlap(psin, ps1, grids.wxyz))
 
-            ps1 = ps1.at[...].subtract(lagrange)
+            ps1 = ps1.at[...].add(-lagrange)
         else:
-            h_exp = jnp.real(overlap(psin, ps1))
-            ps1 = ps1.at[...].subtract(h_exp * psin)
+            h_exp = jnp.real(overlap(psin, ps1, grids.wxyz))
+            ps1 = ps1.at[...].add(-(h_exp * psin))
 
         if params.mprint > 0:
             if params.iteration % params.mprint == 0:
-                sp_efluct1 = jnp.sqrt(rpsnorm(ps1))
-                sp_efluct2 = jnp.sqrt(rpsnorm(lagrange - h_exp * psin))
+                sp_efluct1 = jnp.sqrt(rpsnorm(ps1, grids.wxyz))
+                sp_efluct2 = jnp.sqrt(rpsnorm(lagrange - h_exp * psin, grids.wxyz))
 
         if params.tfft:
-            if static.tbcs:
-                ps2 = laplace()
+            if forces.tbcs:
+                ps2 = laplace(grids, forces, 1.0, 0.0, ps1, 0, static.e0dmp)
             else:
-                ps2 = laplace()
+                ps2 = laplace(
+                    grids,
+                    forces,
+                    levels.wocc[nst],
+                    weightuv,
+                    ps1,
+                    jnp.max(meanfield.v_pair[iq,...]),
+                    static.e0dmp
+                )
         else:
             raise NotImplementedError("Non FFT treatment not implemented for damping")
 
-        psin = psin.at[...].subtract(
-            static.x0dmp * ps2
-        )
+        psin = psin.at[...].add(-(static.x0dmp * ps2))
     else:
-        psin = psin.at[...].multiply(
-            1.0 + static.x0dmp * (spe_mf_new - spe_mf)
-        )
-        psin = psin.at[...].subtract(
-            static.x0dmp * ps1
+        psin = psin.at[...].set(
+            (1.0 + static.x0dmp * (spe_mf_new - spe_mf)) * psin - static.x0dmp * ps1
         )
 
     # Step 4
-    ## call hpsi
+    ps1, hmfpsi, delpsi = hpsi01(grids, meanfield, iq, 1.0, 0.0, psin)
 
     # Step 5
-    res_denerg = (spe_mf - spe_mf_new) / jnp.abs(spe_mf_new)
+    denerg = (spe_mf - spe_mf_new) / jnp.abs(spe_mf_new)
 
-    return psi_mf, spe_mf_new, res_denerg, psin
+    return psin, psi_mf, spe_mf_new, denerg, hmfpsi, delpsi
 
 
+grstep_vmap = jax.vmap(jax.jit(grstep), in_axes=(None, None, None, None, None, None, 0, 0, 0, 0, 0))
 
 
 
