@@ -19,8 +19,8 @@ class Densities:
 
 
 def init_densities(grids) -> Densities:
-    shape4d = (grids.nx, grids.ny, grids.nz, 2)
-    shape5d = (grids.nx, grids.ny, grids.nz, 3, 2)
+    shape4d = (2, grids.nx, grids.ny, grids.nz)
+    shape5d = (2, 3, grids.nx, grids.ny, grids.nz)
 
     default_kwargs = {
         'rho': jnp.zeros(shape4d, dtype=jnp.float64),

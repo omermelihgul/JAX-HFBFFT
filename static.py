@@ -12,7 +12,7 @@ from levels import laplace
                       'gapmatrix',
                       'symcond',
                       'lambda_save'],
-         meta_fields=['e0dmp', 'x0dmp', 'tdiag'])
+         meta_fields=['e0dmp', 'x0dmp', 'tdiag', 'outertype'])
 @dataclass
 class Static:
     tdiag: bool
@@ -22,6 +22,7 @@ class Static:
     lambda_save: jax.Array
     e0dmp: float
     x0dmp: float
+    outertype: str
 
 
 def init_static(levels, **kwargs) -> Static:
@@ -34,7 +35,8 @@ def init_static(levels, **kwargs) -> Static:
         'symcond': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'lambda_save': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'e0dmp': 100.0,
-        'x0dmp': 0.2
+        'x0dmp': 0.2,
+        'outertype': 'N'
     }
 
     return Static(**kwargs)

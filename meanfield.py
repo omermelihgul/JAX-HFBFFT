@@ -372,6 +372,138 @@ hpsi01_jit = jax.jit(hpsi01)
 
 
 
-def skyrme():
-    pass
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+def skyrme(
+    meanfield,
+    densities,
+    forces,
+    params,
+    coulomb
+    grids
+):
+    epsilon = 1.0e-25
+
+    for iq in range(2):
+        ic = 3 - iq
+        meanfield.upot = meanfield.upot.at[iq,...].set(
+
+        )
+
+
+    # iq = 0
+'''
+
+
+
+
+
+'''
+    meanfield.upot = meanfield.upot.at[0,...].set(
+        (densities.rho[0,...] + densities.rho[1,...]) ** forces.power *
+        (
+            (forces.b3 * (forces.power + 2.0) / 3.0 - 2.0 * forces.b3p / 3.0) *
+            densities.rho[0,...] + forces.b3 * (forces.power + 2.0) / 3.0 *
+            densities.rho[1,...] - (forces.b3p * forces./power / 3.0) *
+            (densities.rho[0,...] ** 2 + densities.rho[1,...] ** 2) /
+            (densities.rho[0,...] + densities.rho[1,...] + epsilon)
+         )
+    )
+
+    # iq = 1
+    meanfield.upot = meanfield.upot.at[1,...].set(
+        (densities.rho[0,...] + densities.rho[1,...]) ** forces.power *
+        (
+            (forces.b3 * (forces.power + 2.0) / 3.0 - 2.0 * forces.b3p / 3.0) *
+            densities.rho[1,...] + forces.b3 * (forces.power + 2.0) / 3.0 *
+            densities.rho[0,...] - (forces.b3p * forces.power / 3.0) *
+            (densities.rho[0,...] ** 2 + densities.rho[1,...] ** 2) /
+            (densities.rho[0,...] + densities.rho[1,...] + epsilon)
+         )
+    )
+
+    # Step 2: add divergence of spin-orbit current to upot
+
+    # CALL rmulx
+    # CALL rmuly
+    # CALL rmulz
+
+    # iq = 0
+    meanfield.upot = meanfield.upot.at[0,...].add(
+        -(forces.b4 + forces.b4p) * workden[0,...] - forces.b4 * workden[1,...]
+    )
+
+    # iq = 1
+    meanfield.upot = meanfield.upot.at[1,...].add(
+        -(forces.b4 + forces.b4p) * workden[1,...] - forces.b4 * workden[0,...]
+    )
+
+    # Step 3: Coulomb potential
+    if params.tcoul:
+        # CALL poisson !!!
+        meanfield.upot = meanfield.upot.at[1,...].add(coulomb.wcoul)
+        if forces.ex != 0:
+            meanfield.upot = meanfield.upot.at[1,...].add(
+                -forces.slate * densities.rho[1,...] ** (1.0/3.0)
+            )
+
+    # Step 4: remaining terms of upot
+    workvec = jnp.array((2, 3, grids.nx, grids.ny, grids.nz), dtype=jnp.float64)
+
+    # DO iq=1,2
+        # rmul (x, y ,z)
+    # END DO
+
+    # iq, ic = 0, 1
+    meanfield.upot = meanfield.upot.at[0,...].add(
+        (forces.b0 - forces.b0p) * meanfield.rho[0,...] + forces.b0 * meanfield.rho[1,...] +
+        (forces.b1 - forces.b1p) * densities.tau[0,...] + forces.b1 * densities.tau[1,...] -
+        (forces.b2 - forces.b2p) * workden[0,...] - forces.b2 * workden[1,...]
+    )
+
+    # Step 5.0: effective mass
+    meanfield.bmass = meanfield.bmass.at[0,...].set(
+        forces.h2m[0] + (forces.b1 - forces.b1p) * densities.rho[0,...] + forces.b1 * densities.rho[1,...]
+    )
+
+    # Step 6.0: calculate grad(rho) and wlspot
+    # CALL rmuly
+    # CALL rmuly
+    # CALL rmulz
+
+    # iq, ic = 1, 0
+    meanfield.upot = meanfield.upot.at[1,...].add(
+        (forces.b0 - forces.b0p) * meanfield.rho[1,...] + forces.b0 * meanfield.rho[0,...] +
+        (forces.b1 - forces.b1p) * densities.tau[1,...] + forces.b1 * densities.tau[0,...] -
+        (forces.b2 - forces.b2p) * workden[1,...] - forces.b2 * workden[0,...]
+    )
+
+    # Step 5.5: effective mass
+    meanfield.bmass = meanfield.bmass.at[1,...].set(
+        forces.h2m[1] + (forces.b1 - forces.b1p) * densities.rho[1,...] + forces.b1 * densities.rho[0,...]
+    )
+
+    # Step 6.5: calculate grad(rho) and wlspot
+    # CALL rmulx
+    # CALL rmuly
+    # CALL rmulz
+
+    # iq, ic = 0, 1
+
+
+    pass
+'''
