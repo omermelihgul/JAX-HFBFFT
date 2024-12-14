@@ -61,7 +61,7 @@ def load2d(file_path, n=82, m=82):
     arr = arr.reshape((n, m), order='F')
     return jnp.array(arr)
 
-def load1d_real(file_path, n=132):
-    arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path, dtype=np.float64)
+def load1d_real(file_path, n=48):
+    arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.float64)
     arr = arr.reshape(n, order='F')
     return jnp.array(arr)
