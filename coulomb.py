@@ -48,7 +48,7 @@ def init_coulomb(grids) -> Coulomb:
         q = q.at[0,0,0].set(2.84 / (grids.dx * grids.dy * grids.dz) ** (1.0/3.0))
         q = q.at[...].set(jnp.fft.fftn(q))
 
-        default_kwargs['q'] = q
+    default_kwargs['q'] = q
 
     return Coulomb(**default_kwargs)
 
