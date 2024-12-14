@@ -1,21 +1,22 @@
 import jax
 from jax import numpy as jnp
-from reader import read_yaml
+import yaml
 from functools import partial
 from dataclasses import dataclass
 from jax.tree_util import register_dataclass
-
+from typing import Optional, Dict, Union, Tuple
+from pathlib import Path
 
 @partial(register_dataclass,
          data_fields=[],
          meta_fields=['name', 'ipair', 'ex', 'zpe', 'h2m', 't0', 't1',
-                      't2', 't3', 't4', 'x0', 'x1', 'x2', 'x3', 'b4p',
-                      'power', 'v0prot', 'v0neut', 'rho0pr', 'pair_reg',
-                      'delta_fit', 'pair_cutoff', 'state_cutoff',
-                      'softcut_range', 'tbcs', 'h2ma', 'nucleon_mass',
-                      'b0', 'b0p', 'b1','b1p', 'b2', 'b2p', 'b3', 'b3p',
-                      'b4', 'slate', 'Crho0', 'Crho1', 'Crho0D', 'Crho1D',
-                      'Cdrho0', 'Cdrho1', 'Ctau0', 'Ctau1', 'CdJ0', 'CdJ1'])
+                     't2', 't3', 't4', 'x0', 'x1', 'x2', 'x3', 'b4p',
+                     'power', 'v0prot', 'v0neut', 'rho0pr', 'pair_reg',
+                     'delta_fit', 'pair_cutoff', 'state_cutoff',
+                     'softcut_range', 'tbcs', 'h2ma', 'nucleon_mass',
+                     'b0', 'b0p', 'b1', 'b1p', 'b2', 'b2p', 'b3', 'b3p',
+                     'b4', 'slate', 'Crho0', 'Crho1', 'Crho0D', 'Crho1D',
+                     'Cdrho0', 'Cdrho1', 'Ctau0', 'Ctau1', 'CdJ0', 'CdJ1'])
 @dataclass
 class Forces:
     name: str
@@ -74,25 +75,37 @@ class Forces:
     CdJ0: float
     CdJ1: float
 
+def read_forces_yaml() -> dict:
+    """Read the forces configuration from YAML file."""
+    current_dir = Path(__file__).parent
+    try:
+        with open(current_dir / '_forces.yml', 'r') as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError("Could not find _forces.yml file")
 
-def init_forces(params, **kwargs) -> Forces:
-    force = read_yaml('_forces.yml').get(kwargs.get('name', 'SLy4'))
+def init_forces(params, **kwargs):
+    force_data = read_forces_yaml()
+    force = force_data.get(kwargs.get('name', 'SLy4'))
     if force is None:
-        raise KeyError(f"Force '{name}' not found in the _forces.yml.")
+        raise KeyError(f"Force '{kwargs.get('name', 'SLy4')}' not found in the forces database.")
 
+    # Create default kwargs dictionary
     default_kwargs = {
-        'name': kwargs.get('name', 'SLy4'),
-        'ipair': kwargs.get('ipair', 0),
+        'name': 'SLy4',
+        'ipair': 0,
         'v0prot': 0.0,
         'v0neut': 0.0,
         'rho0pr': 0.16,
-        'pair_reg': kwargs.get('pair_reg', False),
-        'delta_fit': jnp.array(kwargs.get('delta_fit', [-1.0, -1.0])),
-        'pair_cutoff': jnp.array(kwargs.get('pair_cutoff', [0.0, 0.0])),
-        'state_cutoff': jnp.array(kwargs.get('state_cutoff', [0.0, 0.0])),
-        'softcut_range': kwargs.get('softcut_range', 0.1),
-        'tbcs': kwargs.get('tbcs', False)
+        'pair_reg': False,
+        'delta_fit': jnp.array([-1.0, -1.0]),
+        'pair_cutoff': jnp.array([0.0, 0.0]),
+        'state_cutoff': jnp.array([0.0, 0.0]),
+        'softcut_range': 0.1,
+        'tbcs': False
     }
+
+    default_kwargs.update(kwargs)
 
     default_kwargs['ex'] = force.get('ex')
     default_kwargs['zpe'] = force.get('zpe')
@@ -109,19 +122,20 @@ def init_forces(params, **kwargs) -> Forces:
     default_kwargs['b4p'] = force.get('b4p')
     default_kwargs['power'] = force.get('power')
 
+    # Calculate derived parameters
     default_kwargs['b0'] = default_kwargs['t0'] * (1 + 0.5 * default_kwargs['x0'])
     default_kwargs['b0p'] = default_kwargs['t0'] * (0.5 + default_kwargs['x0'])
     default_kwargs['b1'] = (default_kwargs['t1'] + 0.5 * default_kwargs['x1'] *
-                            default_kwargs['t1'] + default_kwargs['t2'] + 0.5 *
-                            default_kwargs['x2'] * default_kwargs['t2']) / 4
+                           default_kwargs['t1'] + default_kwargs['t2'] + 0.5 *
+                           default_kwargs['x2'] * default_kwargs['t2']) / 4
     default_kwargs['b1p'] = (default_kwargs['t1'] * (0.5 + default_kwargs['x1']) -
-                             default_kwargs['t2'] * (0.5 + default_kwargs['x2'])) / 4
+                            default_kwargs['t2'] * (0.5 + default_kwargs['x2'])) / 4
     default_kwargs['b2'] = (3 * default_kwargs['t1'] *
-                            (1 + 0.5 * default_kwargs['x1']) -
-                            default_kwargs['t2'] * (1 + 0.5 * default_kwargs['x2'])) / 8
+                           (1 + 0.5 * default_kwargs['x1']) -
+                           default_kwargs['t2'] * (1 + 0.5 * default_kwargs['x2'])) / 8
     default_kwargs['b2p'] = (3 * default_kwargs['t1'] *
-                             (0.5 + default_kwargs['x1']) +
-                             default_kwargs['t2'] * (0.5 + default_kwargs['x2'])) / 8
+                            (0.5 + default_kwargs['x1']) +
+                            default_kwargs['t2'] * (0.5 + default_kwargs['x2'])) / 8
     default_kwargs['b3'] = default_kwargs['t3'] * (1 + 0.5 * default_kwargs['x3']) / 4
     default_kwargs['b3p'] = default_kwargs['t3'] * (0.5 + default_kwargs['x3']) / 4
     default_kwargs['b4'] = default_kwargs['t4'] / 2
@@ -138,18 +152,7 @@ def init_forces(params, **kwargs) -> Forces:
     default_kwargs['CdJ0'] = -default_kwargs['b4'] - 0.5 * default_kwargs['b4p']
     default_kwargs['CdJ1'] = -0.5 * default_kwargs['b4p']
 
-    if default_kwargs.get('ipair') == 5:
-        default_kwargs['v0prot'] = force.get('vdi').get('v0prot')
-        default_kwargs['v0neut'] = force.get('vdi').get('v0neut')
-        default_kwargs['rho0pr'] = force.get('vdi').get('rho0pr')
-
-    if default_kwargs.get('ipair') == 6:
-        default_kwargs['v0prot'] = force.get('dddi').get('v0prot')
-        default_kwargs['v0neut'] = force.get('dddi').get('v0neut')
-        default_kwargs['rho0pr'] = force.get('dddi').get('rho0pr')
-
     default_kwargs['h2ma'] = float(0.5 * jnp.sum(default_kwargs['h2m']))
     default_kwargs['nucleon_mass'] = params.hbc ** 2 / (2.0 * default_kwargs['h2ma'])
 
     return Forces(**default_kwargs)
-
