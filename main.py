@@ -61,9 +61,10 @@ densities.current = densities.current.at[...].set(load5d_real('current'))
 densities.sdens = densities.sdens.at[...].set(load5d_real('sdens'))
 meanfield.wlspot = meanfield.wlspot.at[...].set(load5d_real('wlspot'))
 meanfield.dbmass = meanfield.dbmass.at[...].set(load5d_real('dbmass'))
-meanfield.spot = meanfield.spot.at[...].set(load5d_real('spot'))
+spot = meanfield.spot.at[...].set(load5d_real('spot'))
 densities.rho = densities.rho.at[...].set(load4d_real('rho'))
 densities.tau = densities.tau.at[...].set(load4d_real('tau'))
+densities.chi = densities.chi.at[...].set(load4d_real('chi'))
 upot_final = load4d_real('upot_final')
 workden = load4d_real('workden')
 coulomb.wcoul = coulomb.wcoul.at[...].set(load3d_real('wcoul'))
@@ -127,7 +128,6 @@ def skyrme(
                 -forces.slate * densities.rho[1,...] ** (1.0 / 3.0)
             )
     # 1.1368683772161603e-13
-
 
     # Step 4: remaining terms of upot
     workden = workden.at[...].set(0.0)
@@ -232,14 +232,11 @@ def skyrme(
         # 0.0 spot
 
     # Step 10: combine isospin contributions
-    rotspp = meanfield.spot[0,...]
-    rotspn = meanfield.spot[1,...]
-    '''
-    for iq in range(2):
-        meanfield.spot = meanfield.spot.at[iq,...].set(
-            -(forces.b4 + forces.b4p) * rotspp -forces.
-        )
-    '''
+    new_spot_0 = -(forces.b4 + forces.b4p) * meanfield.spot[0,...] - forces.b4 * meanfield.spot[1,...]
+    new_spot_1 = -(forces.b4 + forces.b4p) * meanfield.spot[1,...] - forces.b4 * meanfield.spot[0,...]
+
+    meanfield.spot = meanfield.spot.at[0,...].set(new_spot_0)
+    meanfield.spot = meanfield.spot.at[1,...].set(new_spot_1)
 
     # Step 11: calculate divergence of aq in divaq
     for iq in range(2):
@@ -286,28 +283,32 @@ def skyrme(
                 v0act * densities.chi[iq,...] *
                 (1.0 - (densities.rho[0,...] + densities.rho[1,...]) / foces.rho0pr)
             )
+            raise ValueError(f"{forces.ipair=}")
         else:
-            pass
+            meanfield.v_pair = meanfield.v_pair.at[iq,...].set(
+                v0act * densities.chi[iq,...]
+            )
+            meanfield.ecorrp = 0.0
 
 
-    return meanfield.upot, workden, meanfield.bmass, workvec, meanfield.wlspot, meanfield.aq, meanfield.spot, meanfield.divaq, meanfield.dbmass
+    return meanfield.upot, workden, meanfield.bmass, workvec, meanfield.wlspot, meanfield.aq, meanfield.spot, meanfield.divaq, meanfield.dbmass, meanfield.v_pair
 
 # epsilon = 1.0e-25
 
 
 
 
-res, res1,res2, res3, res4, res5, res6, res7, res8 = skyrme(grids, meanfield, densities, forces, coulomb, params)
-print("abs")
-print(jnp.max(jnp.abs(upot_final - res)))
-print(jnp.max(jnp.abs(workden - res1)))
-print(jnp.max(jnp.abs(meanfield.bmass - res2)))
-print(jnp.max(jnp.abs(workvec - res3)))
-print(jnp.max(jnp.abs(meanfield.wlspot - res4)))
-print(jnp.max(jnp.abs(meanfield.aq - res5)))
-print(jnp.max(jnp.abs(meanfield.spot - res6)))
-print(jnp.max(jnp.abs(meanfield.divaq - res7)))
-print(jnp.max(jnp.abs(meanfield.dbmass - res8)))
+res, res1,res2, res3, res4, res5, res6, res7, res8, res9 = skyrme(grids, meanfield, densities, forces, coulomb, params)
+#print("abs")
+#print(jnp.max(jnp.abs(upot_final - res)))
+#print(jnp.max(jnp.abs(workden - res1)))
+#print(jnp.max(jnp.abs(meanfield.bmass - res2)))
+#print(jnp.max(jnp.abs(workvec - res3)))
+#print(jnp.max(jnp.abs(meanfield.wlspot - res4)))
+#print(jnp.max(jnp.abs(meanfield.aq - res5)))
+print(jnp.max(jnp.abs(spot - res6)))
+#print(jnp.max(jnp.abs(meanfield.divaq - res7)))
+#print(jnp.max(jnp.abs(meanfield.dbmass - res8)))
 
 
 
@@ -315,12 +316,13 @@ print(jnp.max(jnp.abs(meanfield.dbmass - res8)))
 
 
 
+print(res6[1,1,1,1,:])
+print(meanfield.spot[1,1,1,1,:])
 
 
 
-
-
-
+v_pair = load4d_real('v_pair')
+print(v_pair)
 
 
 

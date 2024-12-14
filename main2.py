@@ -179,7 +179,7 @@ sp_properties_helper_vmap = jax.vmap(
     in_axes=(0, None, None, None, None, None, None)
 )
 
-
+@jax.jit
 def sp_properties(forces, grids, levels, moment):
     xx = (grids.x - moment.cmtot[0])[jnp.newaxis,:,jnp.newaxis,jnp.newaxis]
     yy = (grids.y - moment.cmtot[1])[jnp.newaxis,jnp.newaxis,:,jnp.newaxis]
@@ -228,10 +228,13 @@ print(jnp.max(jnp.abs(res.sp_kinetic - sp_kinetic)))
 print("sp_parity")
 print(jnp.max(jnp.abs(res.sp_parity - sp_parity)))
 
-print(sp_kinetic)
-print(res.sp_kinetic)
 
+#relative_error = jnp.abs(res.sp_spin.flatten() - sp_spin.flatten()) / jnp.abs(sp_spin.flatten())
 
+#print(jnp.max(relative_error))
+
+print(sp_spin[5,:])
+print(res.sp_spin[5,:])
 '''
 
 
