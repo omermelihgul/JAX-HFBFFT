@@ -7,7 +7,7 @@ from densities import init_densities
 from meanfield import init_meanfield
 from levels import init_levels
 from static import init_static, statichf
-from coulomb import init_coulomb, poisson
+from coulomb import init_coulomb, poisson_jit
 from test import *
 
 jax.config.update('jax_enable_x64', True)
@@ -29,6 +29,6 @@ coulomb.wcoul = coulomb.wcoul.at[...].set(load3d_real('wcoul'))
 densities.rho = densities.rho.at[...].set(load4d_real('rho'))
 
 
-res = poisson(grids, params, coulomb, densities.rho)
+res = poisson_jit(grids, params, coulomb, densities.rho)
 
 print(jnp.max(jnp.abs(coulomb.wcoul - res)))

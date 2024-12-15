@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 @jax.tree_util.register_dataclass
 @dataclass
 class Coulomb:
-    nx2: int
-    ny2: int
-    nz2: int
+    nx2: int = field(metadata=dict(static=True))
+    ny2: int = field(metadata=dict(static=True))
+    nz2: int = field(metadata=dict(static=True))
     wcoul: jax.Array
     q: jax.Array
 
@@ -74,3 +74,4 @@ def poisson(grids, params, coulomb, rho):
 
     return jnp.real(wcoul[:grids.nx, :grids.ny, :grids.nz])
 
+poisson_jit = jax.jit(poisson)
