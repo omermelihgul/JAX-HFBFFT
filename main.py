@@ -6,7 +6,7 @@ from grids import init_grids
 from densities import init_densities
 from meanfield import init_meanfield
 from levels import init_levels
-from static import init_static, statichf
+from static import init_static
 from coulomb import init_coulomb
 
 jax.config.update('jax_enable_x64', True)
@@ -47,7 +47,7 @@ if params.tcoul:
     pass
 
 # static or dynamic  calculation performed
-statichf(params)
+#statichf(params)
 
 from test import *
 from levels import cdervz02

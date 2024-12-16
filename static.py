@@ -146,7 +146,7 @@ def diagstep(grids, forces, static, levels, energies, diagonalize=False, constru
 
 diagstep_jit = jax.jit(diagstep, static_argnames=['diagonalize', 'construct'])
 
-
+'''
 def statichf(params):
     firstiter = 0
 
@@ -164,6 +164,137 @@ def statichf(params):
     print('done')
 
     # step 3: initial gradient step
+
+    # step 4: start static iteration loop
+
+def statichf(params):
+    taddnew = True
+    addnew = 0.2
+    addco = 1.0 - addnew
+
+    firstiter = 0
+    # Step 4: start static iteration loop
+    tbcssav = forces.tbcs # save whether we do HF+BCS
+
+    for i in range(firstiter, static.maxiter + 1):
+        # Do HF+BCS in first inibcs iterations
+        if i <= static.inibcs:
+            forces.tbcs = True
+        else:
+            forces.tbcs = tbcssav
+
+        # Diagonalize matrix lambda (or matrix h_mf
+        # for HF+BCS) in first inidiag iterations
+        if i > static.inidiag:
+            static.tdiag = False
+        else:
+            static.tdiag = True
+
+        # Annealing: enhance pairing strengths
+        # in first iteranneal iterations
+        if static.iteranneal > 0:
+            if i < static.iteranneal:
+                pass
+
+        # Compute expectation value of constraint
+        if constraint.tconstraint:
+            raise ValueError(f"{constraint.tconstraint=}")
+
+        print(f"Static Iteration No. {i:6d}") if params.wflag else None
+
+        # Step 5: gradient step
+        static.delesum = 0.0
+        static.sumflu = 0.0
+        levels.sp_efluct1 = levels.sp_efluct1.at[...].set(0.0)
+        levels.sp_efluct2 = levels.sp_efluct2.at[...].set(0.0)
+
+        # grstep
+
+        # Step 6: diagonalization and orthonormalization
+        # sp_energy and deltaf will also be updated in diagstep
+        if forces.tbcs:
+            static.tdiag = True
+
+        print(f"Iteration number, tdiag = {iter:6d} {static.tdiag}") if params.wflag else None
+
+        # diagstep
+
+        if (forces.ipair != 0 and
+            static.iternat > 0 and
+            i > static.iternat_start and
+            not forces.tbcs
+        ):
+            raise ValueError(f"{forces.ipair=}")
+
+        # Step 8: get new densities and fields with relaxation
+        if taddnew:
+            meanfield.upot = meanfield.upot.at[...].set(densities.rho)
+            meanfield.bmass = meanfield.bmass.at[...].set(densities.tau)
+            meanfield.v_pair = meanfield.v_pair.at[...].set(densities.chi)
+
+        densities.rho = densities.rho.at[...].set(0.0)
+        densities.tau = densities.tau.at[...].set(0.0)
+        densities.chi = densities.chi.at[...].set(0.0)
+        densities.current = densities.current.at[...].set(0.0)
+        densities.sdens = densities.sdens.at[...].set(0.0)
+        densities.sodens = densities.sodens.at[...].set(0.0)
+
+        # add_density
+
+        # Step 8a: optional constraint step
+        if constraint.tconstraint:
+            raise ValueError(f"{constraint.tconstraint=}")
+
+        # Linear mixing of old and new densities
+        if taddnew:
+            densities.rho = densities.rho.at[...].set(
+                addnew * densities.rho + addco * meanfield.upot
+            )
+            densities.tau = densities.tau.at[...].set(
+                addnew * densities.tau + addco * meanfield.bmass
+            )
+            densities.chi = densities.chi.at[...].set(
+                addnew * densities.chi + addco * meanfield.v_pair
+            )
+
+        # Step 8b: construct potentials
+
+        # skyrme
+        if constraint.tconstraint:
+            raise ValueError(f"{constraint.tconstraint=}")
+
+        # Calculate and print information
+        if static.tsort:
+            raise ValueError(f"{static.tsort=}")
+
+        # sp_properties
+
+        if params.mprint > 0:
+            # sinfo
+            pass
+
+        # Step 9: check for convergence, saving wave functions
+        if (energies.efluct1 < static.serr and
+            i > 1 and
+            not ttabc
+
+        ):
+            # CALL write_wavefunctions
+            break
+        if params.mrest > 0:
+            # CALL write_wavefunctions
+            raise ValueError(f"{params.mrest=}")
+
+        # Step 10: calculate new step size
+        if static.tvaryx_0:
+            pass
+
+
+
+    pass
+
+
+'''
 
 
 

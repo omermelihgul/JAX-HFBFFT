@@ -6,12 +6,12 @@ from grids import init_grids
 from densities import init_densities
 from meanfield import init_meanfield
 from levels import init_levels
-from static import init_static, statichf
+from static import init_static
 from coulomb import init_coulomb, poisson
 from test import *
 
 jax.config.update('jax_enable_x64', True)
-jax.config.update('jax_platform_name', 'cpu')
+#jax.config.update('jax_platform_name', 'cpu')
 
 config = read_yaml('_config.yml')
 
@@ -255,7 +255,19 @@ print(jnp.max(jnp.abs(wcoul - res2)))
 
 
 
+import timeit
+start_time = timeit.default_timer()
+for _ in range(3):
+    res1, res2 = skyrme_jit(params, grids, meanfield, densities, forces, static, coulomb)
+    jax.block_until_ready(res1)
+    jax.block_until_ready(res2)
+end_time = timeit.default_timer()
 
+total_time = end_time - start_time
+average_time = total_time / 3
+
+print(average_time)
+# 0.0021801677842934928
 
 
 #coulomb.wcoul = coulomb.wcoul.at[...].set(load3d_real('wcoul'))
