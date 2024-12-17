@@ -1,28 +1,22 @@
 import jax
 from jax import numpy as jnp
 from functools import partial
-from dataclasses import dataclass, replace
-from jax.tree_util import register_dataclass
+from dataclasses import dataclass, field
 from meanfield import hpsi00, hpsi01
 from trivial import rpsnorm, overlap
 from levels import laplace
 
-@partial(register_dataclass,
-         data_fields=['hmatrix',
-                      'gapmatrix',
-                      'symcond',
-                      'lambda_save'],
-         meta_fields=['e0dmp', 'x0dmp', 'tdiag', 'outertype'])
+@jax.tree_util.register_dataclass
 @dataclass
 class Static:
-    tdiag: bool
+    tdiag: bool  = field(metadata=dict(static=True))
     hmatrix: jax.Array
     gapmatrix: jax.Array
     symcond: jax.Array
     lambda_save: jax.Array
-    e0dmp: float
-    x0dmp: float
-    outertype: str
+    e0dmp: float  = field(metadata=dict(static=True))
+    x0dmp: float  = field(metadata=dict(static=True))
+    outertype: str  = field(metadata=dict(static=True))
 
 
 def init_static(levels, **kwargs) -> Static:
@@ -41,7 +35,221 @@ def init_static(levels, **kwargs) -> Static:
 
     return Static(**kwargs)
 
+def diagstep(energies, forces, grids, levels, static, diagonalize=False, construct=True):
+    for iq in range(2):
+        start, end = (0, levels.nneut) if iq == 0 else (levels.nneut, levels.nneut + levels.nprot)
+        nst = end - start
 
+        psi_2d = jnp.reshape(
+            jnp.transpose(
+                levels.psi[start:end,...],
+                axes=(2, 3, 4, 1, 0)
+            ),
+            shape=(-1, nst),
+            order='F'
+        )
+
+        hampsi_2d = jnp.reshape(
+            jnp.transpose(
+                levels.hampsi[start:end,...],
+                axes=(2, 3, 4, 1, 0)
+            ),
+            shape=(-1, nst),
+            order='F'
+        )
+
+        rhomatr_lin = jnp.dot(
+            jnp.conjugate(psi_2d.T),
+            psi_2d
+        ) * grids.wxyz
+
+        if diagonalize:
+            lambda_lin = jnp.dot(
+                jnp.conjugate(psi_2d.T),
+                hampsi_2d
+            ) * grids.wxyz
+
+        if forces.tbcs:
+            energies.efluct1q = energies.efluct1q.at[iq].set(
+                jnp.sqrt(
+                    jnp.sum(
+                        levels.wocc[start:end] *
+                        levels.wstates[start:end] *
+                        levels.sp_efluct1[start:end] ** 2
+                    ) /
+                    jnp.sum(
+                        levels.wocc[start:end] *
+                        levels.wstates[start:end]
+                    )
+                )
+            )
+
+        levels.sp_norm = levels.sp_norm.at[start:end].set(
+            jnp.real(
+                jnp.diagonal(rhomatr_lin)
+            )
+        )
+
+        if diagonalize:
+            _, unitary_lam = jnp.linalg.eigh(lambda_lin, symmetrize_input=False)
+
+        w, v = jnp.linalg.eigh(rhomatr_lin, symmetrize_input=False)
+        unitary_rho = jnp.dot(
+            v,
+            jnp.dot(
+                jnp.diag(jnp.sqrt(1.0 / w)),
+                jnp.conjugate(v.T)
+            )
+        )
+
+        if diagonalize:
+            unitary = jnp.dot(
+                unitary_rho,
+                unitary_lam
+            )
+        else:
+            unitary = unitary_rho
+
+        levels.psi = levels.psi.at[start:end,...].set(
+            jnp.transpose(
+                jnp.reshape(
+                    jnp.dot(psi_2d, unitary),
+                    shape=(grids.nx, grids.ny, grids.nz, 2, nst),
+                    order='F'
+                ),
+                axes=(4, 3, 0, 1, 2)
+            )
+        )
+
+        psi_2d = jnp.reshape(
+            jnp.transpose(
+                levels.psi[start:end,...],
+                axes=(2, 3, 4, 1, 0)
+            ),
+            shape=(-1, nst),
+            order='F'
+        )
+
+        if construct:
+            hmfpsi_2d = jnp.reshape(
+                jnp.transpose(
+                    levels.hmfpsi[start:end,...],
+                    axes=(2, 3, 4, 1, 0)
+                ),
+                shape=(-1, nst),
+                order='F'
+            )
+
+            lambda_lin = jnp.dot(
+                jnp.conjugate(psi_2d.T), hmfpsi_2d
+            ) * grids.wxyz
+
+            static.hmatrix = static.hmatrix.at[iq,:nst,:nst].set(
+                jnp.dot(lambda_lin, unitary)
+            )
+
+            if forces.ipair != 0:
+                delpsi_2d = jnp.reshape(
+                    jnp.transpose(
+                        levels.delpsi[start:end,...],
+                        axes=(2, 3, 4, 1, 0)
+                    ),
+                    shape=(-1, nst),
+                    order='F'
+                )
+
+                lambda_lin = jnp.dot(
+                    jnp.conjugate(psi_2d.T), delpsi_2d
+                ) * grids.wxyz
+
+                static.gapmatrix = static.gapmatrix.at[iq,:nst,:nst].set(
+                    jnp.dot(lambda_lin, unitary)
+                )
+
+            levels.sp_energy = levels.sp_energy.at[start:end].set(
+                jnp.real(
+                    jnp.diagonal(static.hmatrix[iq,:nst,:nst])
+                )
+            )
+
+            if forces.ipair != 0:
+                levels.deltaf = levels.deltaf.at[start:end].set(
+                    jnp.diagonal(static.gapmatrix[iq,:nst,:nst]) * levels.pairwg[start:end]
+                )
+
+            if forces.tbcs:
+                static.gapmatrix = static.gapmatrix.at[iq,:nst,:nst].set(
+                    jnp.diag(static.gapmatrix[iq,:nst,:nst])
+                )
+
+            weight = levels.wocc[start:end] * levels.wstates[start:end]
+            weightuv = levels.wguv[start:end] * levels.pairwg[start:end] * levels.wstates[start:end]
+            lambda_temp = (
+                weight[:,jnp.newaxis] *
+                static.hmatrix[iq,:nst,:nst] -
+                weightuv[:,jnp.newaxis] *
+                static.gapmatrix[iq,:nst,:nst]
+            )
+
+            lambda_lin = (0.5 + 0.5j) * (lambda_temp - jnp.conjugate(lambda_temp.T))
+            energies.efluct1q = energies.efluct1q.at[iq].set(
+                jnp.max(jnp.abs(lambda_lin))
+            )
+            energies.efluct2q = energies.efluct1q.at[iq].set(
+                jnp.sqrt(
+                    jnp.sum(
+                        jnp.real(lambda_lin)**2 +
+                        jnp.imag(lambda_lin)**2
+                    ) / nst**2
+                )
+            )
+
+            static.symcond = static.symcond.at[iq,:nst,:nst].set(lambda_lin)
+
+            lambda_lin = (0.5 + 0.5j) * (lambda_temp + jnp.conjugate(lambda_temp.T))
+
+            levels.lagrange = levels.lagrange.at[start:end,...].set(
+                jnp.transpose(
+                    jnp.reshape(
+                        jnp.dot(psi_2d, lambda_lin),
+                        shape=(grids.nx, grids.ny, grids.nz, 2, nst),
+                        order='F'
+                    ),
+                    axes=(4, 3, 0, 1, 2)
+                )
+            )
+
+            static.lambda_save = static.lambda_save.at[iq,:nst,:nst].set(lambda_lin)
+
+            energies.efluct1 = energies.efluct1.at[0].set(jnp.max(energies.efluct1q))
+            energies.efluct2 = energies.efluct2.at[0].set(jnp.average(energies.efluct2q))
+        else:
+            levels.lagrange = levels.lagrange.at[start:end,...].set(
+                jnp.transpose(
+                    jnp.reshape(
+                        jnp.dot(psi_2d, static.lambda_save[iq,:nst,:nst]),
+                        shape=(grids.nx, grids.ny, grids.nz, 2, nst),
+                        order='F'
+                    ),
+                    axes=(4, 3, 0, 1, 2)
+                )
+            )
+
+    return energies, levels, static
+
+diagstep_jit = jax.jit(diagstep, static_argnames=['diagonalize', 'construct'])
+
+
+
+
+
+
+
+
+
+
+
+'''
 def diagstep(grids, forces, static, levels, energies, diagonalize=False, construct=True):
     for iq in range(2):
         start, end = (0, levels.nneut) if iq == 0 else (levels.nneut, levels.nneut + levels.nprot)
@@ -145,6 +353,7 @@ def diagstep(grids, forces, static, levels, energies, diagonalize=False, constru
     return static, levels, energies
 
 diagstep_jit = jax.jit(diagstep, static_argnames=['diagonalize', 'construct'])
+'''
 
 '''
 def statichf(params):

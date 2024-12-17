@@ -1,16 +1,9 @@
 import jax
 from jax import numpy as jnp
-from functools import partial
 from dataclasses import dataclass
-from jax.tree_util import register_dataclass
 
 
-@partial(register_dataclass,
-         data_fields=['efluct1',
-                      'efluct2',
-                      'efluct1q',
-                      'efluct2q'],
-         meta_fields=[])
+@jax.tree_util.register_dataclass
 @dataclass
 class Energies:
     efluct1: jax.Array

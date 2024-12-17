@@ -54,12 +54,12 @@ def load5d(file_path, nx=48, ny=48, nz=48, nstate=132):
 def load3d(file_path, nx=48, ny=48, nz=48):
     arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.complex128)
     arr = arr.reshape((nx, ny, nz), order='F')
-    return jnp.array(arr)
+    return jnp.array(np.transpose(arr, (2, 0, 1)))
 
-def load2d(file_path, n=82, m=82):
+def load2d(file_path, n=221184, m=82):
     arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.complex128)
     arr = arr.reshape((n, m), order='F')
-    return jnp.array(np.transpose(arr, (1, 0)))
+    return jnp.array(arr)
 
 def load2d_real(file_path, n=82, m=82):
     arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.float64)
@@ -69,5 +69,4 @@ def load2d_real(file_path, n=82, m=82):
 
 def load1d_real(file_path, n=48):
     arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.float64)
-    arr = arr.reshape(n, order='F')
     return jnp.array(arr)
