@@ -25,25 +25,41 @@ levels = init_levels(grids, **config.get('levels', {}))
 static = init_static(levels, **config.get('static', {}))
 coulomb = init_coulomb(grids)
 
-densities.rho = densities.rho.at[...].set(load4d_real('rho'))
-densities.sodens = densities.sodens.at[...].set(load5d_real('sodens'))
-densities.tau = densities.tau.at[...].set(load4d_real('tau'))
-densities.sdens = densities.sdens.at[...].set(load5d_real('sdens'))
-densities.current = densities.current.at[...].set(load5d_real('current'))
-densities.chi = densities.chi.at[...].set(load4d_real('chi'))
+# densities.rho = densities.rho.at[...].set(load4d_real('rho'))
+# densities.sodens = densities.sodens.at[...].set(load5d_real('sodens'))
+# densities.tau = densities.tau.at[...].set(load4d_real('tau'))
+# densities.sdens = densities.sdens.at[...].set(load5d_real('sdens'))
+# densities.current = densities.current.at[...].set(load5d_real('current'))
+# densities.chi = densities.chi.at[...].set(load4d_real('chi'))
 
 
+densities.rho = densities.rho.at[...].set(1.0)
+densities.sodens = densities.sodens.at[...].set(2)
+densities.tau = densities.tau.at[...].set(3)
+densities.sdens = densities.sdens.at[...].set(4)
+densities.current = densities.current.at[...].set(4)
+densities.chi = densities.chi.at[...].set(2)
 
-upot = load4d_real('upot')
-divaq = load4d_real('divaq')
-wlspot = load5d_real('wlspot')
-dbmass = load5d_real('dbmass')
-spot = load5d_real('spot')
-wcoul = load3d_real('wcoul')
-bmass = load4d_real('bmass')
-aq = load5d_real('aq')
-v_pair = load4d_real('v_pair')
 
+# upot = load4d_real('upot')
+# divaq = load4d_real('divaq')
+# wlspot = load5d_real('wlspot')
+# dbmass = load5d_real('dbmass')
+# spot = load5d_real('spot')
+# wcoul = load3d_real('wcoul')
+# bmass = load4d_real('bmass')
+# aq = load5d_real('aq')
+# v_pair = load4d_real('v_pair')
+
+upot = jnp.ones((2,48,48,48), dtype=jnp.float64)
+divaq = jnp.ones((2,48,48,48), dtype=jnp.float64)
+wlspot = jnp.ones((2,3,48,48,48), dtype=jnp.float64)
+dbmass = jnp.ones((2,3,48,48,48), dtype=jnp.float64)
+spot = jnp.ones((2,48,3,48,48), dtype=jnp.float64)
+wcoul = jnp.ones((48,48,48), dtype=jnp.float64)
+bmass = jnp.ones((2,48,48,48), dtype=jnp.float64)
+aq = jnp.ones((2,3,48,48,48), dtype=jnp.float64)
+v_pair = jnp.ones((2,48,48,48), dtype=jnp.float64)
 '''
 print("vals")
 print(forces.power)
@@ -209,7 +225,7 @@ def skyrme(
     for iq in range(2):
         ic = 1 if iq == 0 else 0
         if iq == 2:
-            v0act, v0other, = forces.v0prot, foces.v0neut
+            v0act, v0other, = forces.v0prot, forces.v0neut
         else:
             v0act, v0other = forces.v0neut, forces.v0prot
 
@@ -257,14 +273,14 @@ print(jnp.max(jnp.abs(wcoul - res2)))
 
 import timeit
 start_time = timeit.default_timer()
-for _ in range(3):
+for _ in range(100):
     res1, res2 = skyrme_jit(params, grids, meanfield, densities, forces, static, coulomb)
     jax.block_until_ready(res1)
     jax.block_until_ready(res2)
 end_time = timeit.default_timer()
 
 total_time = end_time - start_time
-average_time = total_time / 3
+average_time = total_time / 100
 
 print(average_time)
 # 0.0021801677842934928

@@ -1,47 +1,33 @@
 import jax
-from jax import numpy as jnp
-from functools import partial
-from dataclasses import dataclass
-from jax.tree_util import register_dataclass
+import jax.numpy as jnp
+from dataclasses import dataclass, field
 
-
-@partial(register_dataclass,
-         data_fields=['x', 'y', 'z', 'der1x', 'der2x', 'cdmpx',
-                      'der1y', 'der2y', 'cdmpy', 'der1z', 'der2z', 'cdmpz'],
-         meta_fields=['nx', 'ny', 'nz', 'dx', 'dy', 'dz', 'periodic', 'bangx',
-                      'bangy', 'bangz', 'tbangx', 'tbangy', 'tbangz', 'tabc_x', 'tabc_y', 'tabc_z', 'wxyz'])
+@jax.tree_util.register_dataclass
 @dataclass
 class Grids:
-    nx: int
-    ny: int
-    nz: int
-    dx: float
-    dy: float
-    dz: float
-    bangx: float
-    bangy: float
-    bangz: float
-    tbangx: bool
-    tbangy: bool
-    tbangz: bool
+    nx: int = field(metadata=dict(static=True))
+    ny: int = field(metadata=dict(static=True))
+    nz: int = field(metadata=dict(static=True))
     tabc_x: int
     tabc_y: int
     tabc_z: int
-    periodic: bool
+    bangx: float
+    bangy: float
+    bangz: float
+    periodic: bool = field(metadata=dict(static=True))
+    dx: float
+    dy: float
+    dz: float
     wxyz: float
-
     x: jax.Array
     y: jax.Array
     z: jax.Array
-
     der1x: jax.Array
     der2x: jax.Array
     cdmpx: jax.Array
-
     der1y: jax.Array
     der2y: jax.Array
     cdmpy: jax.Array
-
     der1z: jax.Array
     der2z: jax.Array
     cdmpz: jax.Array
@@ -77,7 +63,7 @@ def sder2(nmax: int, d: float) -> jnp.ndarray:
 sder2_jit = jax.jit(sder2, static_argnames=['nmax', 'd'])
 
 
-def init_grids(params, **kwargs) -> Grids:
+def init_grids(params, **kwargs):
     default_kwargs = {
         'nx': 48,
         'ny': 48,
@@ -88,9 +74,6 @@ def init_grids(params, **kwargs) -> Grids:
         'bangx': 0.0,
         'bangy': 0.0,
         'bangz': 0.0,
-        'tbangx': False,
-        'tbangy': False,
-        'tbangz': False,
         'tabc_x': 0,
         'tabc_y': 0,
         'tabc_z': 0,

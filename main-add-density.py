@@ -31,21 +31,35 @@ levels.wguv = levels.wguv.at[...].set(0.0)
 levels.pairwg = levels.pairwg.at[...].set(1.0)
 
 
-levels.psi = levels.psi.at[...].set(load5d('psi'))
-densities.rho = densities.rho.at[...].set(load4d_real('rho'))
-densities.chi = densities.chi.at[...].set(load4d_real('chi'))
-densities.tau = densities.tau.at[...].set(load4d_real('tau'))
-densities.current = densities.current.at[...].set(load5d_real('current'))
-densities.sdens = densities.sdens.at[...].set(load5d_real('sdens'))
-densities.sodens = densities.sodens.at[...].set(load5d_real('sodens'))
+levels.psi = levels.psi.at[...].set(0.5)
+densities.rho = densities.rho.at[...].set(1)
+densities.chi = densities.chi.at[...].set(0.5)
+densities.tau = densities.tau.at[...].set(1.3)
+densities.current = densities.current.at[...].set(1.3)
+densities.sdens = densities.sdens.at[...].set(1.1)
+densities.sodens = densities.sodens.at[...].set(1.2)
 
-rho = load4d_real('res_rho')
-chi = load4d_real('res_chi')
-tau = load4d_real('res_tau')
-current = load5d_real('res_current')
-sdens = load5d_real('res_sdens')
-sodens = load5d_real('res_sodens')
+# levels.psi = levels.psi.at[...].set(load5d('psi'))
+# densities.rho = densities.rho.at[...].set(load4d_real('rho'))
+# densities.chi = densities.chi.at[...].set(load4d_real('chi'))
+# densities.tau = densities.tau.at[...].set(load4d_real('tau'))
+# densities.current = densities.current.at[...].set(load5d_real('current'))
+# densities.sdens = densities.sdens.at[...].set(load5d_real('sdens'))
+# densities.sodens = densities.sodens.at[...].set(load5d_real('sodens'))
 
+# rho = load4d_real('res_rho')
+# chi = load4d_real('res_chi')
+# tau = load4d_real('res_tau')
+# current = load5d_real('res_current')
+# sdens = load5d_real('res_sdens')
+# sodens = load5d_real('res_sodens')
+
+rho = jnp.ones((2,48,48,48))
+chi = jnp.ones((2,48,48,48))
+tau = jnp.ones((2,48,48,48))
+current = jnp.ones((2,3,48,48,48))
+sdens = jnp.ones((2,3,48,48,48))
+sodens = jnp.ones((2,3,48,48,48))
 
 res = add_density_jit(densities, grids, levels)
 
@@ -65,13 +79,13 @@ print(jnp.max(jnp.abs(sodens - res.sodens)))
 
 import timeit
 start_time = timeit.default_timer()
-for _ in range(2000):
+for _ in range(500):
     res = add_density_jit(densities, grids, levels)
     jax.block_until_ready(res)
 end_time = timeit.default_timer()
 
 total_time = end_time - start_time
-average_time = total_time / 2000
+average_time = total_time / 500
 
 print(average_time)
 # 0.0625475561041385

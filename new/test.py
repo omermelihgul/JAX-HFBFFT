@@ -72,5 +72,5 @@ def load2d_int(file_path, n=82, m=82):
     return jnp.array(np.transpose(arr, (1, 0)))
 
 def load1d_real(file_path, n=48):
-    arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.float64)
+    arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.d', dtype=np.float64)
     return jnp.array(arr)

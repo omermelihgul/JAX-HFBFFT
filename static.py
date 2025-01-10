@@ -9,31 +9,72 @@ from levels import laplace
 @jax.tree_util.register_dataclass
 @dataclass
 class Static:
-    tdiag: bool  = field(metadata=dict(static=True))
+    tdiag: bool = field(metadata=dict(static=True))
+    tlarge: bool = field(metadata=dict(static=True))
+    tvaryx_0: bool = field(metadata=dict(static=True))
+    ttime: bool = field(metadata=dict(static=True))
+    tsort: bool = field(metadata=dict(static=True))
+    maxiter: int = field(metadata=dict(static=True))
+    iternat: int = field(metadata=dict(static=True))
+    iternat_start: int = field(metadata=dict(static=True))
+    iteranneal: int = field(metadata=dict(static=True))
+    pairenhance: float = field(metadata=dict(static=True))
+    inibcs: int = field(metadata=dict(static=True))
+    inidiag: int = field(metadata=dict(static=True))
+    delstepbas: float = field(metadata=dict(static=True))
+    e0bas: float = field(metadata=dict(static=True))
+    outerpot: float = field(metadata=dict(static=True))
+    radinx: float = field(metadata=dict(static=True))
+    radiny: float = field(metadata=dict(static=True))
+    radinz: float = field(metadata=dict(static=True))
+    serr: float = field(metadata=dict(static=True))
+    delesum: float = field(metadata=dict(static=True))
+    sumflu: float = field(metadata=dict(static=True))
+    x0dmp: float = field(metadata=dict(static=True))
+    e0dmp: float = field(metadata=dict(static=True))
+    x0dmpmin: float = field(metadata=dict(static=True))
+    outertype: str  = field(metadata=dict(static=True))
     hmatrix: jax.Array
     gapmatrix: jax.Array
     symcond: jax.Array
     lambda_save: jax.Array
-    e0dmp: float  = field(metadata=dict(static=True))
-    x0dmp: float  = field(metadata=dict(static=True))
-    outertype: str  = field(metadata=dict(static=True))
 
 
 def init_static(levels, **kwargs) -> Static:
     nst = max(levels.nneut, levels.nprot)
 
-    kwargs = {
+    default_kwargs = {
         'tdiag': False,
+        'tlarge': False,
+        'tvaryx_0': False,
+        'ttime': False,
+        'tsort': False,
+        'iternat': 100,
+        'iternat_start': 40,
+        'iteranneal': 0,
+        'pairenhance': 0.0,
+        'inibcs': 30,
+        'inidiag': 30,
+        'delstepbas': 2.0,
+        'e0bas': 10.0,
+        'delesum': 0,
+        'sumflu': 0,
+        'outerpot': 0,
+        'x0dmp': 0.2,
+        'e0dmp': 100,
+        'x0dmpmin': 0.2,
+        'outertype': 'N',
         'hmatrix': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'gapmatrix': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'symcond': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
         'lambda_save': jnp.zeros((2, nst, nst), dtype=jnp.complex128),
-        'e0dmp': 100.0,
-        'x0dmp': 0.2,
-        'outertype': 'N'
     }
 
-    return Static(**kwargs)
+    default_kwargs.update(kwargs)
+
+    default_kwargs['x0dmpmin'] =  default_kwargs['x0dmp']
+
+    return Static(**default_kwargs)
 
 def diagstep(energies, forces, grids, levels, static, diagonalize=False, construct=True):
     for iq in range(2):
@@ -593,15 +634,3 @@ def grstep(
 
 
 grstep_vmap = jax.vmap(jax.jit(grstep), in_axes=(None, None, None, None, None, None, 0, 0, 0, 0, 0))
-
-
-
-
-
-
-
-
-
-
-
-

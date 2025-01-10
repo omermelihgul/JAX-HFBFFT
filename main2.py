@@ -8,11 +8,11 @@ from grids import init_grids
 from densities import init_densities
 from meanfield import init_meanfield
 from levels import init_levels
-from static import init_static, statichf
+from static import init_static
 from coulomb import init_coulomb
 from moment import Moment
 jax.config.update('jax_enable_x64', True)
-jax.config.update('jax_platform_name', 'cpu')
+# jax.config.update('jax_platform_name', 'cpu')
 
 config = read_yaml('_config.yml')
 
@@ -209,10 +209,15 @@ def sp_properties(forces, grids, levels, moment):
 
 levels.psi = levels.psi.at[...].set(load5d('psi'))
 
-sp_spin = load2d_real('sp_spin', 3, 132)
-sp_orbital = load2d_real('sp_orbital', 3, 132)
-sp_kinetic = load1d_real('sp_kinetic', 132)
-sp_parity = load1d_real('sp_parity', 132)
+# sp_spin = load2d_real('sp_spin', 3, 132)
+# sp_orbital = load2d_real('sp_orbital', 3, 132)
+# sp_kinetic = load1d_real('sp_kinetic', 132)
+# sp_parity = load1d_real('sp_parity', 132)
+
+sp_spin = jnp.ones((132, 3))
+sp_orbital = jnp.ones((132, 3))
+sp_kinetic = jnp.ones((132))
+sp_parity = jnp.ones((132))
 
 res = sp_properties(forces, grids, levels, moment)
 
@@ -229,13 +234,29 @@ print("sp_parity")
 print(jnp.max(jnp.abs(res.sp_parity - sp_parity)))
 
 
+
+
 #relative_error = jnp.abs(res.sp_spin.flatten() - sp_spin.flatten()) / jnp.abs(sp_spin.flatten())
 
 #print(jnp.max(relative_error))
 
-print(sp_spin[5,:])
-print(res.sp_spin[5,:])
+#print(sp_spin[5,:])
+#print(res.sp_spin[5,:])
+
+
+import timeit
+start_time = timeit.default_timer()
+for _ in range(100):
+    res = sp_properties(forces, grids, levels, moment)
+    jax.block_until_ready(res)
+end_time = timeit.default_timer()
+
+total_time = end_time - start_time
+average_time = total_time / 100
+
+print(average_time)
 '''
+
 
 
 pst = load4d('pst')

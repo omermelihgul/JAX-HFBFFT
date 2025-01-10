@@ -32,7 +32,6 @@ from jax.tree_util import register_dataclass
                       'mprint',
                       'mplot',
                       'mrest',
-                      'iteration',
                       'time',
                       'wflag',
                       'printnow',
@@ -42,7 +41,7 @@ from jax.tree_util import register_dataclass
                       'mnof',
                       'nof',
                       'tabc_nprocs',
-                      'tabc_myid'])
+                      'tabc_myid', 'iteration'])
 @dataclass
 class Params:
     # useful constants

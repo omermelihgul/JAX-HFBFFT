@@ -1,48 +1,31 @@
 import jax
-from jax import numpy as jnp
+import jax.numpy as jnp
 from reader import read_yaml
-from functools import partial
-from dataclasses import dataclass
-from jax.tree_util import register_dataclass
 
+from dataclasses import dataclass, field
 
-@partial(register_dataclass,
-         data_fields=[],
-         meta_fields=['name', 'ipair', 'ex', 'zpe', 'h2m', 't0', 't1',
-                      't2', 't3', 't4', 'x0', 'x1', 'x2', 'x3', 'b4p',
-                      'power', 'v0prot', 'v0neut', 'rho0pr', 'pair_reg',
-                      'delta_fit', 'pair_cutoff', 'state_cutoff',
-                      'softcut_range', 'h2ma', 'nucleon_mass',
-                      'b0', 'b0p', 'b1','b1p', 'b2', 'b2p', 'b3', 'b3p',
-                      'b4', 'slate', 'Crho0', 'Crho1', 'Crho0D', 'Crho1D',
-                      'Cdrho0', 'Cdrho1', 'Ctau0', 'Ctau1', 'CdJ0', 'CdJ1', 'tbcs'])
+@jax.tree_util.register_dataclass
 @dataclass
 class Forces:
-    name: str
-    ipair: int
-
-    ex: int
+    name: str = field(metadata=dict(static=True))
+    ex: int = field(metadata=dict(static=True))
     zpe: int
     h2m: jax.Array
-
     t0: float
     t1: float
     t2: float
     t3: float
     t4: float
-
     x0: float
     x1: float
     x2: float
     x3: float
     b4p: float
-
     power: float
-
     v0prot: float
     v0neut: float
     rho0pr: float
-
+    ipair: int = field(metadata=dict(static=True))
     pair_reg: bool
     delta_fit: jax.Array
     pair_cutoff: jax.Array
@@ -51,7 +34,6 @@ class Forces:
     tbcs: bool
     h2ma: float
     nucleon_mass: float
-
     b0: float
     b0p: float
     b1: float
@@ -61,8 +43,8 @@ class Forces:
     b3: float
     b3p: float
     b4: float
+    b4p: float
     slate: float
-
     Crho0: float
     Crho1: float
     Crho0D: float
@@ -75,10 +57,11 @@ class Forces:
     CdJ1: float
 
 
-def init_forces(params, **kwargs) -> Forces:
+def init_forces(params, **kwargs):
     force = read_yaml('_forces.yml').get(kwargs.get('name', 'SLy4'))
+
     if force is None:
-        raise KeyError(f"Force '{name}' not found in the _forces.yml.")
+        raise KeyError(f"Force '{force}' not found in the _forces.yml.")
 
     default_kwargs = {
         'name': kwargs.get('name', 'SLy4'),
