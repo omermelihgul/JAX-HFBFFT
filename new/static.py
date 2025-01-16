@@ -7,8 +7,42 @@ from inout import sp_properties
 from levels import laplace
 from meanfield import skyrme, hpsi00, hpsi01
 from trivial import rpsnorm, overlap
+from functools import partial
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'tlarge',
+    'tvaryx_0',
+    'ttime',
+    'tsort',
+    'maxiter',
+    'iternat',
+    'iternat_start',
+    'iteranneal',
+    'pairenhance',
+    'inibcs',
+    'inidiag',
+    'delstepbas',
+    'e0bas',
+    'outerpot',
+    'radinx',
+    'radiny',
+    'radinz',
+    'serr',
+    'delesum',
+    'sumflu',
+    'x0dmp',
+    'e0dmp',
+    'x0dmpmin',
+    'hmatrix',
+    'gapmatrix',
+    'symcond',
+    'lambda_save'
+],
+meta_fields = [
+    'tdiag',
+    'outertype' 
+])
 @dataclass
 class Static:
     tdiag: bool = field(metadata=dict(static=True))

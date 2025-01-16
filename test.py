@@ -46,7 +46,7 @@ def load5d_real(file_path, nx=48, ny=48, nz=48):
     return jnp.array(np.transpose(arr, (4, 3, 0, 1, 2)))
 
 def load5d(file_path, nx=48, ny=48, nz=48, nstate=132):
-    arr = np.fromfile('/mnt/home/gulomer/HFBFFT/Code/' + file_path + '.dat', dtype=np.complex128)
+    arr = np.fromfile('' + file_path + '.dat', dtype=np.complex128)
     arr = arr.reshape((nx, ny, nz, 2, nstate), order='F')
     #return jnp.array(arr)
     return jnp.array(np.transpose(arr, (4, 3, 0, 1, 2)))

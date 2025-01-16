@@ -1,8 +1,39 @@
 import jax
 import jax.numpy as jnp
 from dataclasses import dataclass, field
+from functools import partial
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'tabc_x',
+    'tabc_y',
+    'tabc_z',
+    'bangx',
+    'bangy',
+    'bangz',
+    'dx',
+    'dy',
+    'dz',
+    'wxyz',
+    'x',
+    'y',
+    'z',
+    'der1x',
+    'der2x',
+    'cdmpx',
+    'der1y',
+    'der2y',
+    'cdmpy',
+    'der1z',
+    'der2z',
+    'cdmpz'
+],
+meta_fields = [
+    'nx',
+    'ny',
+    'nz',
+    'periodic'
+])
 @dataclass
 class Grids:
     nx: int = field(metadata=dict(static=True))

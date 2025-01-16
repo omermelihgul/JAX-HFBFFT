@@ -2,8 +2,18 @@ import jax
 import jax.numpy as jnp
 from dataclasses import dataclass, field
 from levels import cdervx00, cdervy00, cdervz00
+from functools import partial
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'rho',
+    'chi',
+    'tau',
+    'current',
+    'sdens',
+    'sodens'
+],
+meta_fields = [])
 @dataclass
 class Densities:
     rho: jax.Array

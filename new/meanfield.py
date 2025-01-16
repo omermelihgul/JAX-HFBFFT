@@ -3,8 +3,21 @@ import jax.numpy as jnp
 from dataclasses import dataclass, field
 from coulomb import poisson
 from levels import cdervx00, cdervx02, cdervy00, cdervy02, cdervz00, cdervz02
+from functools import partial
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'upot',
+    'bmass',
+    'divaq',
+    'v_pair',
+    'aq',
+    'spot',
+    'wlspot',
+    'dbmass',
+    'ecorrp' 
+],
+meta_fields = [])
 @dataclass
 class Meanfield:
     upot: jax.Array

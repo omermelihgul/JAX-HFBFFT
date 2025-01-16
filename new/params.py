@@ -1,8 +1,48 @@
 import jax
 import jax.numpy as jnp
 from dataclasses import dataclass, field
+from functools import partial
 
-@jax.tree_util.register_dataclass
+
+@partial(jax.tree_util.register_dataclass,
+         data_fields=['pi','hbc','e2','cmplxone',
+    'cmplxhalf',
+    'cmplxzero',
+    'r0',
+    'scratch',
+    'scratch2',
+    'tstatic',
+    'tdynamic',
+    'tfft',
+    'trestart',
+    'mprint',
+    'mplot',
+    'mrest',
+    'iteration',
+    'time',
+    'wflag',
+    'printnow',
+    'nselect',
+    'write_isospin',
+    'mnof',
+    'nof',
+    'tabc_nprocs',
+    'tabc_myid'],
+         meta_fields = [
+    'wffile',
+    'converfile',
+    'monopolesfile',
+    'dipolesfile',
+    'momentafile',
+    'energiesfile',
+    'diffenergiesfile',
+    'quadrupolesfile',
+    'spinfile',
+    'extfieldfile',
+    'tabcfile',
+    'tcoul',
+    'writeselect'
+    ])
 @dataclass
 class Params:
     pi: float

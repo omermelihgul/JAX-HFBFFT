@@ -1,10 +1,63 @@
 import jax
 import jax.numpy as jnp
 from reader import read_yaml
+from functools import partial
 
 from dataclasses import dataclass, field
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'zpe',
+    'h2m',
+    't0',
+    't1',
+    't2',
+    't3',
+    't4',
+    'x0',
+    'x1',
+    'x2',
+    'x3',
+    'b4p',
+    'power',
+    'v0prot',
+    'v0neut',
+    'rho0pr',
+    'pair_reg',
+    'delta_fit',
+    'pair_cutoff',
+    'state_cutoff',
+    'softcut_range',
+    'tbcs',
+    'h2ma',
+    'nucleon_mass',
+    'b0',
+    'b0p',
+    'b1',
+    'b1p',
+    'b2',
+    'b2p',
+    'b3',
+    'b3p',
+    'b4',
+    'b4p',  # This appears twice in your input, I'm assuming it's intentional
+    'slate',
+    'Crho0',
+    'Crho1',
+    'Crho0D',
+    'Crho1D',
+    'Cdrho0',
+    'Cdrho1',
+    'Ctau0',
+    'Ctau1',
+    'CdJ0',
+    'CdJ1'
+],
+meta_fields = [
+    'name',
+    'ex',
+    'ipair'
+])
 @dataclass
 class Forces:
     name: str = field(metadata=dict(static=True))

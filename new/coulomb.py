@@ -1,8 +1,18 @@
 import jax
 from jax import numpy as jnp
 from dataclasses import dataclass, field
+from functools import partial
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'wcoul', 
+    'q'
+],
+meta_fields = [
+    'nx2', 
+    'ny2', 
+    'nz2'
+])
 @dataclass
 class Coulomb:
     nx2: int = field(metadata=dict(static=True))

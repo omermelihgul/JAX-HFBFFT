@@ -1,9 +1,20 @@
 import jax
 from jax import numpy as jnp
 from dataclasses import dataclass
+from functools import partial
 
-
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'ehf',
+    'ehfprev',
+    'efluct1prev',
+    'efluct2prev',
+    'efluct1',
+    'efluct2',
+    'efluct1q',
+    'efluct2q'
+],
+meta_fields = [])
 @dataclass
 class Energies:
     ehf: float

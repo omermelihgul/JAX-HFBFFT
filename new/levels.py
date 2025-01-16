@@ -1,8 +1,39 @@
 import jax
 from jax import numpy as jnp
 from dataclasses import dataclass, field
+from functools import partial
 
-@jax.tree_util.register_dataclass
+@partial(jax.tree_util.register_dataclass,
+data_fields = [
+    'npmin',
+    'npsi',
+    'charge_number',
+    'mass_number',
+    'psi',
+    'hampsi',
+    'lagrange',
+    'hmfpsi',
+    'delpsi',
+    'sp_orbital',
+    'sp_spin',
+    'isospin',
+    'sp_energy',
+    'sp_efluct1',
+    'sp_kinetic',
+    'sp_norm',
+    'sp_efluct2',
+    'sp_parity',
+    'wocc',
+    'wguv',
+    'pairwg',
+    'wstates',
+    'deltaf'
+],
+meta_fields = [
+    'nstmax',
+    'nneut',
+    'nprot'
+])
 @dataclass
 class Levels:
     nstmax: int = field(metadata=dict(static=True))
